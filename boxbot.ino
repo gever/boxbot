@@ -126,12 +126,12 @@ void setup_move(bool dir, int dist) {
   step_count = dist * ROT_UNIT;
   if (dir) {
     // SDEBUG("FWD:", dir);
-    m1.set_direction(1);
-    m2.set_direction(0);
-  } else {
-    // SDEBUG("BWD:", dir);
     m1.set_direction(0);
     m2.set_direction(1);
+  } else {
+    // SDEBUG("BWD:", dir);
+    m1.set_direction(1);
+    m2.set_direction(0);
   }
   m1.enable();
   m2.enable();
