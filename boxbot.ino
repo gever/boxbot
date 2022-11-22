@@ -17,6 +17,9 @@
 #include <WebServer.h>
 #include "util.h"
 
+#define SDEBUG(label, x) {Serial.print(label); Serial.println(x);}
+#define ABS(x) ((x<0) ? (-x) : (x))
+
 // the gui is served as static "files" from memory
 extern char *index_html;
 extern char *style_css;
@@ -30,7 +33,6 @@ const char *password = "yourPassword";
 
 WebServer server(80);
 
-#define ABS(x) ((x)<0?(-(x)):(x))
 const bool FWD = true;
 const bool BWD = false;
 
@@ -40,7 +42,7 @@ const bool BWD = false;
 class MarsStepper {
   private:
     bool enabled;
-    bool direction;
+    bool dir;
     unsigned short pin1, pin2, pin3, pin4;
     unsigned int step_counter;
     unsigned int divisor;
@@ -63,10 +65,11 @@ class MarsStepper {
       divisor = 1; // how often step() calls should be heeded
 
       enabled = false;
-      direction = FWD;
+      dir = FWD;
     }
-    void set_direction(bool dir) {
-      direction = dir;
+    void set_direction(bool d) {
+      // SDEBUG("set_direction = ", d);
+      dir = d;
     }
     void enable() {
       enabled = true;
@@ -100,7 +103,7 @@ class MarsStepper {
         case 6: SET_BITS(0, 0, 0, 1); break;
         case 7: SET_BITS(1, 0, 0, 1); break;
       }
-      current_step += (direction == FWD ? 1 : -1);
+      current_step += (dir ? 1 : -1); // FWD=true, BWD=false
     }
 };
 
@@ -117,14 +120,18 @@ int step_count = 0; // for the current motion, for all active motors
 /*
    set up a move command
 */
-void setup_move(int dir, int dist) {
+void setup_move(bool dir, int dist) {
+  // SDEBUG("setup_move\ndir = ", dir);
+  // SDEBUG("dist = ", dist);
   step_count = dist * ROT_UNIT;
   if (dir) {
-    m1.set_direction(dir);
-    m2.set_direction(!dir);
+    // SDEBUG("FWD:", dir);
+    m1.set_direction(1);
+    m2.set_direction(0);
   } else {
-    m1.set_direction(!dir);
-    m2.set_direction(dir);
+    // SDEBUG("BWD:", dir);
+    m1.set_direction(0);
+    m2.set_direction(1);
   }
   m1.enable();
   m2.enable();
@@ -134,13 +141,13 @@ void setup_move(int dir, int dist) {
    set up a turn command
 */
 void setup_turn(int dir, int dist) {
-  step_count = dist * ROT_UNIT;
+  step_count = (dist * ROT_UNIT) / 4;
   if (dir) {
-    m1.set_direction(dir);
-    m2.set_direction(dir);
+    m1.set_direction(1);
+    m2.set_direction(1);
   } else {
-    m1.set_direction(!dir);
-    m2.set_direction(!dir);
+    m1.set_direction(0);
+    m2.set_direction(0);
   }
   m1.enable();
   m2.enable();
@@ -195,8 +202,11 @@ void handleNotFound() {
 
 void handleMove() {
   if (server.args()) {
+    // SDEBUG("move: args = ", server.args());
+    // SDEBUG("move: arg = ", server.arg(0));
     int v = server.arg(0).toInt();  // negative for backwards movement
-    setup_move( v < 0 ? 0 : 1, ABS(v) );
+    // SDEBUG("move: v = ", v);
+    setup_move( v < 0 ? BWD : FWD, ABS(v) );
   }
   server.send(200, "application/json", "{status:'ACK'}");
 }
