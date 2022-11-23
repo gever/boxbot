@@ -168,6 +168,13 @@ void step_the_motors() {
   }
 }
 
+// hardware clock to step the motors at a good rate
+hw_timer_t *step_timer = NULL;
+
+void IRAM_ATTR onTimer(){
+  step_the_motors();
+}
+
 /*
  * Handle requests for static page content
  */
@@ -248,11 +255,19 @@ void setup() {
   
   server.begin();
 
+  // set up the motor step timer
+  step_timer = timerBegin(0, 80, true);
+  timerAttachInterrupt(step_timer, &onTimer, true);
+  timerAlarmWrite(step_timer, 850 , true);  // second parameter is the delay time, smaller is faster
+  timerAlarmEnable(step_timer);
+
   Serial.println("Server started");
 }
 
 void loop() {
   server.handleClient();
   delay(2);            //allow the cpu to switch to other tasks
-  step_the_motors();  // TODO: do this update with a timer in an interrupt handler
+  
+  // moved this to the interrupt handler
+  // step_the_motors();  // TODO: do this update with a timer in an interrupt handler
 }
