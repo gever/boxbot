@@ -24,6 +24,7 @@
 extern char *index_html;
 extern char *style_css;
 extern char *script_js;
+extern char *setup_html;
 
 #define LED_BUILTIN 2   // Set the GPIO pin where you connected your test LED or comment this line out if your dev board has a built-in LED
 
@@ -107,23 +108,34 @@ class MarsStepper {
     }
 };
 
-
 // create the motors
 MarsStepper m1(13, 14, 27, 26);
 MarsStepper m2(18, 19, 21, 22);
 
-#define ROT_STEPS  4000
-#define ROT_UNIT (ROT_STEPS/16)
+const float rot_steps = 2038 * 2;   // one full rotation of the motor shaft
+const float boxbot_body_rad = 75;   // the distance from the pen to the wheel in mm
+const float boxbot_turn_circ = PI * 2.0 * boxbot_body_rad;  // circumference of circle described by the wheels
+const float boxbot_wheel_rad = 40;  // in mm
+const float boxbot_wheel_circ = PI * 2.0 * boxbot_wheel_rad;  // circumference of the wheel in mm
+const float boxbot_turn_steps = (boxbot_turn_circ / boxbot_wheel_circ) * rot_steps; // number of steps to turn 360 deg
+const float boxbot_steps_mm = rot_steps / boxbot_wheel_circ;  // steps per mm 
+float boxbot_linear_turn_fudge = 1.1; // gets applied to the result of the turn calculation, can be adjusted 
+
+// #define ROT_STEPS  2038*2             // one complete rotation
+// #define ROT_STEPSF ((float)ROT_STEPS)
+// #define ROT_UNIT (ROT_STEPS/16)
 
 int step_count = 0; // for the current motion, for all active motors
 
 /*
    set up a move command
+   dir  - fwd=1, bwd=0
+   dist - in millimeters
 */
 void setup_move(bool dir, int dist) {
   // SDEBUG("setup_move\ndir = ", dir);
   // SDEBUG("dist = ", dist);
-  step_count = dist * ROT_UNIT;
+  step_count = dist * boxbot_steps_mm;
   if (dir) {
     // SDEBUG("FWD:", dir);
     m1.set_direction(0);
@@ -140,8 +152,8 @@ void setup_move(bool dir, int dist) {
 /*
    set up a turn command
 */
-void setup_turn(int dir, int dist) {
-  step_count = (dist * ROT_UNIT) / 4;
+void setup_turn(int dir, int angle) {
+  step_count = boxbot_turn_steps * (((float)angle)/360.0f);
   if (dir) {
     m1.set_direction(1);
     m2.set_direction(1);
@@ -187,6 +199,9 @@ void handleScriptJs() {
 void handleStyleCss() {
   server.send(200, "text/css", style_css);
 }
+void handleSetup() {
+  server.send(200, "text/html", setup_html);
+}
 
 void handleNotFound() {
   String message = "File Not Found\n\n";
@@ -207,12 +222,17 @@ void handleNotFound() {
 // CONSIDER: right now you can interrupt the active movement by
 //           sending a new movement command
 
+void handleSettings() {
+  if (server.args()) {
+    int v = server.arg(0).toInt();  // negative for backwards movement
+    setup_move( v < 0 ? BWD : FWD, ABS(v) );
+  }
+  server.send(200, "application/json", "{status:'ACK'}");
+}
+
 void handleMove() {
   if (server.args()) {
-    // SDEBUG("move: args = ", server.args());
-    // SDEBUG("move: arg = ", server.arg(0));
     int v = server.arg(0).toInt();  // negative for backwards movement
-    // SDEBUG("move: v = ", v);
     setup_move( v < 0 ? BWD : FWD, ABS(v) );
   }
   server.send(200, "application/json", "{status:'ACK'}");
@@ -223,7 +243,6 @@ void handleTurn() {
     int v = server.arg(0).toInt();
     setup_turn( v < 0 ? 0 : 1, ABS(v) ); // negative for left turns
   }
-  // Serial.print("step_count="); Serial.println(step_count);
   server.send(200, "application/json", "{status:'ACK'}");
 }
 
@@ -251,6 +270,7 @@ void setup() {
   server.on("/index.html", handleLandingPage);
   server.on("/style.css", handleStyleCss);
   server.on("/script.js", handleScriptJs);
+  server.on("/setup", handleSetup);
   server.onNotFound(handleNotFound);
   
   server.begin();
@@ -258,7 +278,7 @@ void setup() {
   // set up the motor step timer
   step_timer = timerBegin(0, 80, true);
   timerAttachInterrupt(step_timer, &onTimer, true);
-  timerAlarmWrite(step_timer, 850 , true);  // second parameter is the delay time, smaller is faster
+  timerAlarmWrite(step_timer, 1500 , true);  // second parameter is the delay time, smaller is faster
   timerAlarmEnable(step_timer);
 
   Serial.println("Server started");

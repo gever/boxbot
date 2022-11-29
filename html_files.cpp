@@ -80,3 +80,6 @@ const char *index_html = R"VERBATIM(
 
 </html>
 )VERBATIM";
+
+const char *setup_html = R"VERBATIM(
+)VERBATIM";
