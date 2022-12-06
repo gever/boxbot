@@ -35,7 +35,7 @@ bool wheels_forward = true;
 #define LED_BUILTIN 2   // Set the GPIO pin where you connected your test LED or comment this line out if your dev board has a built-in LED
 
 // Set these to your desired credentials.
-const char *ssid = "boxbot01";
+const char *ssid = "boxbot02";
 const char *password = (char *)NULL;
 
 WebServer server(80);
@@ -143,12 +143,12 @@ int step_count = 0; // for the current motion, for all active motors
 /*
    set up a move command
    dir  - fwd=1, bwd=0
-   dist - in millimeters
+   dist - in centimeters
 */
 void setup_move(bool dir, int dist) {
   // SDEBUG("setup_move\ndir = ", dir);
   // SDEBUG("dist = ", dist);
-  step_count = dist * boxbot_steps_mm * linear_motion_fudge;
+  step_count = (dist * 10) * boxbot_steps_mm * linear_motion_fudge;
   if (dir) {
     // SDEBUG("FWD:", dir);
     m1.set_direction(0);
