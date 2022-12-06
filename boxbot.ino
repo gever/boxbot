@@ -20,19 +20,28 @@
 #define SDEBUG(label, x) {Serial.print(label); Serial.println(x);}
 #define ABS(x) ((x<0) ? (-x) : (x))
 
-// the gui is served as static "files" from memory
+// the gui is (currently) served as static "files" from memory
 extern char *index_html;
 extern char *style_css;
 extern char *script_js;
-extern char *setup_html;
+extern char *settings_html;
+
+// things that can be set through settings UI
+uint16_t motor_step_rate = 950;
+float linear_turn_fudge = 1.0;
+float linear_motion_fudge = 1.0;
+bool wheels_forward = true;
 
 #define LED_BUILTIN 2   // Set the GPIO pin where you connected your test LED or comment this line out if your dev board has a built-in LED
 
 // Set these to your desired credentials.
 const char *ssid = "boxbot01";
-const char *password = "yourPassword";
+const char *password = (char *)NULL;
 
 WebServer server(80);
+
+// hardware clock to step the motors at a good rate
+hw_timer_t *step_timer = NULL;
 
 const bool FWD = true;
 const bool BWD = false;
@@ -118,12 +127,16 @@ const float boxbot_turn_circ = PI * 2.0 * boxbot_body_rad;  // circumference of 
 const float boxbot_wheel_rad = 40;  // in mm
 const float boxbot_wheel_circ = PI * 2.0 * boxbot_wheel_rad;  // circumference of the wheel in mm
 const float boxbot_turn_steps = (boxbot_turn_circ / boxbot_wheel_circ) * rot_steps; // number of steps to turn 360 deg
-const float boxbot_steps_mm = rot_steps / boxbot_wheel_circ;  // steps per mm 
-float boxbot_linear_turn_fudge = 1.1; // gets applied to the result of the turn calculation, can be adjusted 
+const float boxbot_steps_mm = rot_steps / boxbot_wheel_circ;  // steps per mm
 
 // #define ROT_STEPS  2038*2             // one complete rotation
 // #define ROT_STEPSF ((float)ROT_STEPS)
 // #define ROT_UNIT (ROT_STEPS/16)
+
+void step_the_motors();
+void IRAM_ATTR onTimer() {
+  step_the_motors();
+}
 
 int step_count = 0; // for the current motion, for all active motors
 
@@ -135,7 +148,7 @@ int step_count = 0; // for the current motion, for all active motors
 void setup_move(bool dir, int dist) {
   // SDEBUG("setup_move\ndir = ", dir);
   // SDEBUG("dist = ", dist);
-  step_count = dist * boxbot_steps_mm;
+  step_count = dist * boxbot_steps_mm * linear_motion_fudge;
   if (dir) {
     // SDEBUG("FWD:", dir);
     m1.set_direction(0);
@@ -147,13 +160,16 @@ void setup_move(bool dir, int dist) {
   }
   m1.enable();
   m2.enable();
+
+  // start movement
+  // timerAttachInterrupt(step_timer, &onTimer, true);
 }
 
 /*
    set up a turn command
 */
 void setup_turn(int dir, int angle) {
-  step_count = boxbot_turn_steps * (((float)angle)/360.0f);
+  step_count = boxbot_turn_steps * (((float)angle) / 360.0f) * linear_turn_fudge;
   if (dir) {
     m1.set_direction(1);
     m2.set_direction(1);
@@ -163,33 +179,44 @@ void setup_turn(int dir, int angle) {
   }
   m1.enable();
   m2.enable();
+
+  // start movement
+  // timerAttachInterrupt(step_timer, &onTimer, true);
 }
 
 void step_the_motors() {
   if (step_count) {
     step_count--;
-    
+
     m1.step();
     m2.step();
-    
+
     if (step_count == 0) {
       // save power, turn off the motors when not moving
       m1.disable();
       m2.disable();
+
+      // ignore the timer
+      // timerDetachInterrupt(step_timer);
     }
   }
 }
 
-// hardware clock to step the motors at a good rate
-hw_timer_t *step_timer = NULL;
-
-void IRAM_ATTR onTimer(){
-  step_the_motors();
+// configure the interrupt timer
+void setup_timer( ) {
+  // pretty good tutorial on interrupt timers:
+  // https://iotespresso.com/timer-interrupts-with-esp32/
+  if (step_timer == NULL) {
+    step_timer = timerBegin(0, 80, true);   // configured for 1MHZ (1,000,000/sec)    
+  }
+  timerAttachInterrupt(step_timer, &onTimer, true);
+  timerAlarmWrite(step_timer, motor_step_rate, true);
+  timerAlarmEnable(step_timer);
 }
 
 /*
- * Handle requests for static page content
- */
+   Handle requests for static page content
+*/
 void handleLandingPage() {
   server.send(200, "text/html", index_html);
 }
@@ -200,7 +227,7 @@ void handleStyleCss() {
   server.send(200, "text/css", style_css);
 }
 void handleSetup() {
-  server.send(200, "text/html", setup_html);
+  server.send(200, "text/html", settings_html);
 }
 
 void handleNotFound() {
@@ -221,14 +248,6 @@ void handleNotFound() {
 
 // CONSIDER: right now you can interrupt the active movement by
 //           sending a new movement command
-
-void handleSettings() {
-  if (server.args()) {
-    int v = server.arg(0).toInt();  // negative for backwards movement
-    setup_move( v < 0 ? BWD : FWD, ABS(v) );
-  }
-  server.send(200, "application/json", "{status:'ACK'}");
-}
 
 void handleMove() {
   if (server.args()) {
@@ -253,6 +272,27 @@ void handleStop() {
   server.send(200, "application/json", "{status:'ACK'}");
 }
 
+void handleSave() {
+  if (server.args()) {
+    String label;
+
+    label = "motor-step-rate";
+    if (server.hasArg( label )) {
+      motor_step_rate = server.arg( label ).toInt();
+      // TODO: motor_setup( motor_step_rate );
+    }
+    label = "linear-motion-fudge";
+    if (server.hasArg( label )) {
+      linear_motion_fudge = server.arg( label ).toFloat();
+    }
+    label = "linear-turn-fudge";
+    if (server.hasArg( label )) {
+      linear_turn_fudge = server.arg( label ).toFloat();
+    }
+  }
+  handleLandingPage();
+}
+
 void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
   Serial.begin(115200);
@@ -270,16 +310,14 @@ void setup() {
   server.on("/index.html", handleLandingPage);
   server.on("/style.css", handleStyleCss);
   server.on("/script.js", handleScriptJs);
-  server.on("/setup", handleSetup);
+  server.on("/settings.html", handleSetup);
+  server.on("/save", handleSave);
   server.onNotFound(handleNotFound);
-  
+
   server.begin();
 
   // set up the motor step timer
-  step_timer = timerBegin(0, 80, true);
-  timerAttachInterrupt(step_timer, &onTimer, true);
-  timerAlarmWrite(step_timer, 1500 , true);  // second parameter is the delay time, smaller is faster
-  timerAlarmEnable(step_timer);
+  setup_timer( );
 
   Serial.println("Server started");
 }
@@ -287,7 +325,4 @@ void setup() {
 void loop() {
   server.handleClient();
   delay(2);            //allow the cpu to switch to other tasks
-  
-  // moved this to the interrupt handler
-  // step_the_motors();  // TODO: do this update with a timer in an interrupt handler
 }
