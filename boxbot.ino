@@ -21,10 +21,7 @@
 #define ABS(x) ((x<0) ? (-x) : (x))
 
 // the gui is (currently) served as static "files" from memory
-extern char *index_html;
-extern char *style_css;
-extern char *script_js;
-extern char *settings_html;
+#include "html_files.h"  // script-generated in the repl.it repo: https://replit.com/@gever/bbdebuggui
 
 // things that can be set through settings UI
 uint16_t motor_step_rate = 950;
@@ -35,7 +32,7 @@ bool wheels_forward = true;
 #define LED_BUILTIN 2   // Set the GPIO pin where you connected your test LED or comment this line out if your dev board has a built-in LED
 
 // Set these to your desired credentials.
-const char *ssid = "boxbot02";
+const char *ssid = "silly-bobcat";  // boxbot 02
 const char *password = (char *)NULL;
 
 WebServer server(80);
@@ -195,9 +192,7 @@ void step_the_motors() {
       // save power, turn off the motors when not moving
       m1.disable();
       m2.disable();
-
-      // ignore the timer
-      // timerDetachInterrupt(step_timer);
+      // TODO: evaluate possibility of turning off the interrupts while idle (might save power)
     }
   }
 }
@@ -273,6 +268,8 @@ void handleStop() {
 }
 
 void handleSave() {
+  // TODO: save current settings to SPIFFS/flash memory
+  // TODO: save load current settings from SPIFFS
   if (server.args()) {
     String label;
 
