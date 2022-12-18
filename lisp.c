@@ -329,9 +329,18 @@ L eval(L x, L e) {
 /* tokenization buffer and the next character that we are looking at */
 char buf[40], see = ' ';
 
+// TSMM addition for ESP32 integration
+char *next_char_p = NULL;
+int get_next_char() {
+  if (next_char_p && *next_char_p) {
+    return *next_char_p++;
+  }
+  return EOF;
+}
+
 /* advance to the next character */
 void look() {
-  int c = getchar();
+  int c = get_next_char();
   see = c;
   if (c == EOF)
     exit(0);
@@ -460,4 +469,20 @@ int main() {
   }
 }
 #else
+void run_script( const char *script ) {
+  I i;
+
+  // point the getchar() substitute at the script
+  next_char_p = script;
+  
+  // printf("tinylisp");
+  nil = box(NIL, 0);
+  err = atom("ERR");
+  tru = atom("#t");
+  env = pair(tru, tru, nil);
+  for (i = 0; prim[i].s; ++i)
+    env = pair(atom(prim[i].s), box(PRIM, i), env);
+  eval( read(), env );
+  gc();  
+}
 #endif // INCLUDE_MAIN

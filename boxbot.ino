@@ -23,13 +23,14 @@
 // the gui is (currently) served as static "files" from memory
 #include "html_files.h"  // script-generated in the repl.it repo: https://replit.com/@gever/bbdebuggui
 
+// lisp integration (so far...)
+extern void run_script( const char *script );
+
 // things that can be set through settings UI
 uint16_t motor_step_rate = 950;
 float linear_turn_fudge = 1.0;
 float linear_motion_fudge = 1.0;
 bool wheels_forward = true;
-
-#define LED_BUILTIN 2   // Set the GPIO pin where you connected your test LED or comment this line out if your dev board has a built-in LED
 
 // Set these to your desired credentials.
 const char *ssid = "silly-bobcat";  // boxbot 02
@@ -291,7 +292,6 @@ void handleSave() {
 }
 
 void setup() {
-  pinMode(LED_BUILTIN, OUTPUT);
   Serial.begin(115200);
 
   Serial.println("Configuring access point...");
