@@ -5,6 +5,15 @@
 #include <stdio.h>
 #include <string.h>
 
+#define EMBEDDED_DEEP
+#ifdef EMBEDDED_DEEP
+#define pbuff_sz 512
+char pbuff[pbuff_sz]; // TODO: evaluate this for "typical usage" to tune the size
+#define FORMAT_S(...) sprintf(pbuff, pbuff_sz, __VA_ARGS__)
+#else
+#define FORMAT_S(...) printf(__VA_ARGS__)
+#endif
+
 /* we only need two types to implement a Lisp interpreter:
         I    unsigned integer (either 16 bit, 32 bit or 64 bit unsigned)
         L    Lisp expression (double with NaN boxing)
@@ -422,7 +431,7 @@ void printlist(L t) {
     if (T(t) == NIL)
       break;
     if (T(t) != CONS) {
-      printf(" . ");
+      FORMAT_S(" . ");
       print(t);
       break;
     }
@@ -433,17 +442,17 @@ void printlist(L t) {
 /* display a Lisp expression x */
 void print(L x) {
   if (T(x) == NIL)
-    printf("()");
+    FORMAT_S("()");
   else if (T(x) == ATOM)
-    printf("%s", A+ord(x));
+    FORMAT_S("%s", A+ord(x));
   else if (T(x) == PRIM)
-    printf("<%s>", prim[ord(x)].s);
+    FORMAT_S("<%s>", prim[ord(x)].s);
   else if (T(x) == CONS)
     printlist(x);
   else if (T(x) == CLOS)
-    printf("{%u}", ord(x));
+    FORMAT_S("{%u}", ord(x));
   else
-    printf("%.10lg", x);
+    FORMAT_S("%.10lg", x);
 }
 
 /* garbage collection removes temporary cells, keeps global environment */
@@ -455,7 +464,7 @@ void gc() {
 /* Lisp initialization and REPL */
 int main() {
   I i;
-  printf("tinylisp");
+  FORMAT_S("tinylisp");
   nil = box(NIL, 0);
   err = atom("ERR");
   tru = atom("#t");
@@ -463,7 +472,7 @@ int main() {
   for (i = 0; prim[i].s; ++i)
     env = pair(atom(prim[i].s), box(PRIM, i), env);
   while (1) {
-    printf("\n%u>", sp-hp/8);
+    FORMAT_S("\n%u>", sp-hp/8);
     print(eval(read(), env));
     gc();
   }
@@ -475,7 +484,7 @@ void run_script( const char *script ) {
   // point the getchar() substitute at the script
   next_char_p = script;
   
-  // printf("tinylisp");
+  // FORMAT_S("tinylisp");
   nil = box(NIL, 0);
   err = atom("ERR");
   tru = atom("#t");
