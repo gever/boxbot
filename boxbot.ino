@@ -24,7 +24,7 @@
 #include "html_files.h"  // script-generated in the repl.it repo: https://replit.com/@gever/bbdebuggui
 
 // lisp integration (so far...)
-extern void run_script( const char *script );
+extern "C" void run_script( const char *script );
 
 // things that can be set through settings UI
 uint16_t motor_step_rate = 950;
