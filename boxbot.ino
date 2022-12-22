@@ -30,7 +30,7 @@ float linear_motion_fudge = 1.0;
 bool wheels_forward = true;
 
 // Set these to your desired credentials.
-const char *ssid = "zoyt-bot";
+const char *ssid = "CSSC-Ceto";
 const char *password = (char *)NULL;
 
 WebServer server(80);
@@ -309,11 +309,15 @@ void handlePlan() {
   if (server.args()) {
     if (server.arg(0).length() > MAX_PLAN_LEN-1) {
       Serial.println("ERR: Motion plan length exceeds buffer size - ignoring plan.");
+      server.send(200, "application/json", "{status:'ACK'}"); // TODO: send better return statuses
       return;
     }
     
-    strcpy(plan_buffer, server.arg(0).c_str());
+    server.send(200, "application/json", "{status:'ACK'}"); // TODO: send better return statuses
 
+    strcpy(plan_buffer, server.arg(0).c_str());
+    Serial.println("handlePlan: begin");
+    Serial.println(plan_buffer);
     const char delim[] = ",\n";
     char *plan = plan_buffer;
     char *token = strtok(plan, delim); // get the first token
@@ -335,6 +339,7 @@ void handlePlan() {
       
       token = strtok(NULL, delim);
     }
+    Serial.println("handlePlan: end");
   }
 }
 

@@ -2,6 +2,9 @@
 DO NOT EDIT - BUILT BY THE BUILD SCRIPT: https://replit.com/@gever/bbdebuggui
 *************************************************************/ 
 const char *script_js= R"VERBATIM(
+function report_error(error_message) {
+  document.getElementById("error_panel").innerHTML += error_message;
+}
 
 // immediate motion 
 function boxbot_move(v) {
@@ -126,8 +129,9 @@ function sendCode(evt) {
   code_blob = code_blob.split(' ').join(',');
   var translated = boxbot_translate(code_blob);
   if (translated.startsWith("ERROR")) {
-
+    console.log(translated);
   } else {
+    // report_error("sending: " + translated + "\n")
     boxbot_send_plan(translated);
     // console.log("Code---");
     // console.log(code_blob);
@@ -555,6 +559,7 @@ const char *index_html= R"VERBATIM(
       </td>
     </tr>
   </table>
+  <pre style="color:aliceblue" id="error_panel"></pre>
   <script src="script.js"></script>
 </body>
 
