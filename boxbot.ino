@@ -30,7 +30,7 @@ float linear_motion_fudge = 1.0;
 bool wheels_forward = true;
 
 // Set these to your desired credentials.
-const char *ssid = "silly-bobcat";  // boxbot 02
+const char *ssid = "zoyt-bot";
 const char *password = (char *)NULL;
 
 WebServer server(80);
@@ -200,7 +200,7 @@ void setup_timer( ) {
   // pretty good tutorial on interrupt timers:
   // https://iotespresso.com/timer-interrupts-with-esp32/
   if (step_timer == NULL) {
-    step_timer = timerBegin(0, 80, true);   // configured for 1MHZ (1,000,000/sec)    
+    step_timer = timerBegin(0, 80, true);   // configured for 1MHZ (1,000,000/sec)
   }
   timerAttachInterrupt(step_timer, &onTimer, true);
   timerAlarmWrite(step_timer, motor_step_rate, true);
@@ -288,23 +288,76 @@ void handleSave() {
   handleLandingPage();
 }
 
+// parse a string into a number
+int parse_int(char *str) {
+  int num = 0;
+  int i = 0;
+  if (str[i] == '-')
+    i++;
+  while (str[i] >= '0' && str[i] <= '9') {
+    num = num * 10 + str[i] - '0';
+    i++;
+  }
+  if (str[0] == '-')
+    num *= -1;
+  return num;
+}
+
+#define MAX_PLAN_LEN 256
+char plan_buffer[MAX_PLAN_LEN];
+void handlePlan() {
+  if (server.args()) {
+    if (server.arg(0).length() > MAX_PLAN_LEN-1) {
+      Serial.println("ERR: Motion plan length exceeds buffer size - ignoring plan.");
+      return;
+    }
+    
+    strcpy(plan_buffer, server.arg(0).c_str());
+
+    const char delim[] = ",\n";
+    char *plan = plan_buffer;
+    char *token = strtok(plan, delim); // get the first token
+    while (token != NULL) {
+      int num = 0;
+      if (*token == 'M') {
+        num = parse_int(++token);
+        setup_move(num < 0 ? BWD : FWD, num < 0 ? -num : num);
+      } else if (*token == 'T') {
+        num = parse_int(++token);
+        setup_turn(num < 0 ? 0 : 1, num < 0 ? -num : num); 
+      }
+      
+      // wait for the command to finish
+      while (step_count > 0) {
+        server.handleClient();
+        delay(2);
+      }
+      
+      token = strtok(NULL, delim);
+    }
+  }
+}
+
 void setup() {
   Serial.begin(115200);
 
   Serial.println("Configuring access point...");
   WiFi.softAP(ssid);
   IPAddress myIP = WiFi.softAPIP();
+  // WiFi.softAPsetHostname(hostname);
   Serial.print("AP IP address: ");
   Serial.println(myIP);
 
   server.on("/", handleLandingPage);
-  server.on("/move", handleMove);
-  server.on("/turn", handleTurn);
-  server.on("/stop", handleStop);
+  server.on("/move", handleMove);   // immediate move
+  server.on("/turn", handleTurn);   // immediate turn
+  server.on("/stop", handleStop);   // immediate stop (of everything)
+  server.on("/plan", handlePlan);     // run multiple commands (BUCL script)
   server.on("/index.html", handleLandingPage);
   server.on("/style.css", handleStyleCss);
   server.on("/script.js", handleScriptJs);
   server.on("/settings.html", handleSetup);
+  server.on("/settings", handleSetup);
   server.on("/save", handleSave);
   server.onNotFound(handleNotFound);
 

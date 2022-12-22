@@ -13,6 +13,10 @@ function boxbot_turn(v) {
 function boxbot_stop(v) {
   fetch('/stop'); // .then((response) => console.log(response.json()));
 }
+function boxbot_send_plan(plan) {
+  fetch('/plan?a=' + plan); //.then((response) => console.log(response.json()));
+  console.log('plan: ' + plan);
+}
 
 // motion planning support
 // add click handlers to all of the command panel buttons
@@ -59,6 +63,50 @@ function undoCode(evt) {
   }
 }
 
+// encode the "motion plan" in a dense format that is
+// easier to parse on the boxbot (until python/lisp are working)
+// input:
+//   MOV,FWD,10
+//   MOV,BWD,10
+//   TRN,LT,90
+//   TRN,RT,90
+//   TRN,LT,30
+//   TRN,RT,30
+//   MOV,FWD,5
+//   MOV,BWD,5
+//   TRN,LT,180
+//   TRN,RT,180
+//  output:
+//   M10,M-10,T-90,T90,T-30,T30,M-5,M5,T-180,T180
+function boxbot_translate(raw_code) {
+  var code = raw_code.split("\n");
+  var output = "";
+  for (var i = 0; i < code.length; i++) {
+    var line = code[i];
+    if (line.length == 0) continue;
+
+    var parts = line.split(",");
+    var opcode = parts[0];
+    var modifier = parts[1];
+    var param = parts[2];
+    if (output.length > 0) {
+      output += ",";
+    }
+    if (opcode == "TRN") {
+      output += "T";
+    } else if (opcode == "MOV") {
+      output += "M";
+    } else {
+      return "ERROR: unknown opcode: " + opcode;
+    }
+    if ((modifier == "LT") || (modifier == "BWD")) {
+      output += "-";
+    }
+    output += param;
+  }
+  return output;
+}
+
 var last_send = Date.now();
 function sendCode(evt) {
   if ((Date.now() - last_send) < 1000) {
@@ -67,6 +115,7 @@ function sendCode(evt) {
   }
   last_send = Date.now();
 
+  // collect the code
   confirmationAnimation(evt.target);
   var current = lines_of_code.firstChild;
   var code_blob = "";
@@ -75,10 +124,16 @@ function sendCode(evt) {
     current = current.nextSibling;
   }
   code_blob = code_blob.split(' ').join(',');
-  console.log("Code---");
-  console.log(code_blob);
-  // window.BU_send( code_blob );
-  setTimeout(deleteTheCode, 500);
+  var translated = boxbot_translate(code_blob);
+  if (translated.startsWith("ERROR")) {
+
+  } else {
+    boxbot_send_plan(translated);
+    // console.log("Code---");
+    // console.log(code_blob);
+    // window.BU_send( code_blob );
+    setTimeout(deleteTheCode, 500);
+  }
 }
 
 function forceRefresh() {
@@ -100,6 +155,14 @@ html, body {
   font-family: sans-serif;
   height: 100%;
   width: 100%;
+  background-color: #000000;
+}
+
+.banner {
+  font-family: sans-serif;
+  font-weight: bold;
+  color: #28b4f0;
+  background-color: #424242;
 }
 
 .button_body {
@@ -268,6 +331,52 @@ pre {
 }
 )VERBATIM";
 
+const char *touch_go_html= R"VERBATIM(
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width">
+  <title>Boxbot 0.1</title>
+  <link href="style.css" rel="stylesheet" type="text/css" />
+</head>
+
+<body>
+  <table>
+    <tr>
+      <td class="button_body" onclick="boxbot_move(1)">FWD 1</td>
+      <td class="button_body" onclick="boxbot_move(-1)">BWD 1</td>
+      <td class="button_body" onclick="boxbot_turn(-15)">LT 15</td>
+      <td class="button_body" onclick="boxbot_turn(15)">
+        <div class="arrow">&#10227;</div>
+        <div>15</div>
+      </td>
+    </tr>
+    <tr>
+      <td class="button_body" onclick="boxbot_move(5)">FWD 5</td>
+      <td class="button_body" onclick="boxbot_move(-5)">BWD 5</td>
+      <td class="button_body" onclick="boxbot_turn(-45)">LT 45</td>
+      <td class="button_body" onclick="boxbot_turn(45)">RT 45</td>
+    </tr>
+    <tr>
+      <td class="button_body" onclick="boxbot_move(10)">FWD 10</td>
+      <td class="button_body" onclick="boxbot_move(-10)">BWD 10</td>
+      <td class="button_body" onclick="boxbot_turn(-90)">LT 90</td>
+      <td class="button_body" onclick="boxbot_turn(90)">RT 90</td>
+    </tr>
+    <tr>
+      <td colspan=4 class="button_body" style="text-align:center" onclick="boxbot_stop()">stop</td>
+    </tr>
+  </table>
+
+  <a href="settings.html">settings</a>
+  <script src="script.js"></script>
+</body>
+
+</html>
+)VERBATIM";
+
 const char *settings_html= R"VERBATIM(
 <!DOCTYPE html>
 <html>
@@ -312,16 +421,14 @@ const char *settings_html= R"VERBATIM(
         <div class="tooltip-element">This constant is multiplied by the calculated "idealized" turn result
           (which is based on a 80mm diameter and zero-slip surface) to correct under/over turnage. More
           than 1.0 creates more turn, less than 1.0 creates less turn.</div>
-        <input type="number" class="form-control" name="linear-turn-fudge" access="false" value="1.0"
-          id="linear-turn-fudge">
+        <input type="text" class="form-control" name="linear-turn-fudge" value="1.0" id="linear-turn-fudge">
       </div>
       <div class="form-group">
         <div class="formbuilder-group-label">Linear Motion Fudge</div>
         <div class="tooltip-element">This constant is multiplied by the calculated "idealized" movement result
           (which is based on a 80mm diameter and zero-slip surface) to correct under/over movement. More
           than 1.0 creates more movement, less than 1.0 creates less movement.</div>
-        <input type="number" class="form-control" name="linear-motion-fudge" access="false" value="1.0"
-          id="linear-turn-fudge">
+        <input type="text" class="form-control" name="linear-motion-fudge" value="1.0" id="linear-motion-fudge">
       </div>
       <div class="formbuilder-button form-group">
         <button type="submit" class="btn-success btn" name="save-button" access="false" style="success"
@@ -347,7 +454,8 @@ const char *index_html= R"VERBATIM(
   <link href="style.css" rel="stylesheet" type="text/css" />
 </head>
 
-<body style="width:100%; background-color:black;">
+<body style="width:100%;">
+  <div class="banner">Chabot Space and Science Center presents: Tinkering School Boxbot Beta</div>
   <table style="width:100%">
     <tr>
       <td class="command_container">
@@ -421,7 +529,7 @@ const char *index_html= R"VERBATIM(
       <td>
         <div class="code_container">
           <div class="main_pane">
-            <div class="panel_title" onclick="forceRefresh(event)">Movement Plan</div>
+            <div class="panel_title" onclick="forceRefresh(event)">Motion Plan</div>
             <div id="lines_of_code"></div>
           </div>
           <table width="100%" style="vertical-align:bottom;">
@@ -447,52 +555,6 @@ const char *index_html= R"VERBATIM(
       </td>
     </tr>
   </table>
-  <script src="script.js"></script>
-</body>
-
-</html>
-)VERBATIM";
-
-const char *touch_go_html= R"VERBATIM(
-<!DOCTYPE html>
-<html>
-
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width">
-  <title>Boxbot 0.1</title>
-  <link href="style.css" rel="stylesheet" type="text/css" />
-</head>
-
-<body>
-  <table>
-    <tr>
-      <td class="button_body" onclick="boxbot_move(1)">FWD 1</td>
-      <td class="button_body" onclick="boxbot_move(-1)">BWD 1</td>
-      <td class="button_body" onclick="boxbot_turn(-15)">LT 15</td>
-      <td class="button_body" onclick="boxbot_turn(15)">
-        <div class="arrow">&#10227;</div>
-        <div>15</div>
-      </td>
-    </tr>
-    <tr>
-      <td class="button_body" onclick="boxbot_move(5)">FWD 5</td>
-      <td class="button_body" onclick="boxbot_move(-5)">BWD 5</td>
-      <td class="button_body" onclick="boxbot_turn(-45)">LT 45</td>
-      <td class="button_body" onclick="boxbot_turn(45)">RT 45</td>
-    </tr>
-    <tr>
-      <td class="button_body" onclick="boxbot_move(10)">FWD 10</td>
-      <td class="button_body" onclick="boxbot_move(-10)">BWD 10</td>
-      <td class="button_body" onclick="boxbot_turn(-90)">LT 90</td>
-      <td class="button_body" onclick="boxbot_turn(90)">RT 90</td>
-    </tr>
-    <tr>
-      <td colspan=4 class="button_body" style="text-align:center" onclick="boxbot_stop()">stop</td>
-    </tr>
-  </table>
-
-  <a href="settings.html">settings</a>
   <script src="script.js"></script>
 </body>
 
