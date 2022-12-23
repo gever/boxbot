@@ -30,7 +30,7 @@ float linear_motion_fudge = 1.0;
 bool wheels_forward = true;
 
 // Set these to your desired credentials.
-const char *ssid = "CSSC-Ceto";
+const char *ssid = "CSSC-Albion";
 const char *password = (char *)NULL;
 
 WebServer server(80);
