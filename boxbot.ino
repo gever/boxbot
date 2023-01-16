@@ -26,6 +26,15 @@ const char *password = (char *)NULL;
 
 WebServer server(80);
 
+// all the fiddly bits having to do with executing the current script (TODO: encapsulate)
+#define MAX_PLAN_LEN 256
+bool plan_ready = false;        // signals main loop to start the plan
+char plan_buffer[MAX_PLAN_LEN];
+const char delim[] = ",\n";
+char *plan = NULL;
+char *plan_token = NULL; // get the first token
+
+
 // hardware clock to step the motors at a good rate
 hw_timer_t *step_timer = NULL;
 
@@ -253,6 +262,7 @@ void handleStop() {
   m1.disable();
   m2.disable();
   step_count = 0;
+  plan_ready = false;
   server.send(200, "application/json", "{status:'ACK'}");
 }
 
@@ -294,8 +304,6 @@ int parse_int(char *str) {
   return num;
 }
 
-#define MAX_PLAN_LEN 256
-char plan_buffer[MAX_PLAN_LEN];
 void handlePlan() {
   if (server.args()) {
     if (server.arg(0).length() > MAX_PLAN_LEN-1) {
@@ -307,30 +315,32 @@ void handlePlan() {
     server.send(200, "application/json", "{status:'ACK'}"); // TODO: send better return statuses
 
     strcpy(plan_buffer, server.arg(0).c_str());
-    Serial.println("handlePlan: begin");
-    Serial.println(plan_buffer);
-    const char delim[] = ",\n";
-    char *plan = plan_buffer;
-    char *token = strtok(plan, delim); // get the first token
-    while (token != NULL) {
-      int num = 0;
-      if (*token == 'M') {
-        num = parse_int(++token);
-        setup_move(num < 0 ? BWD : FWD, num < 0 ? -num : num);
-      } else if (*token == 'T') {
-        num = parse_int(++token);
-        setup_turn(num < 0 ? 0 : 1, num < 0 ? -num : num); 
-      }
-      
-      // wait for the command to finish
-      while (step_count > 0) {
-        server.handleClient();
-        delay(2);
-      }
-      
-      token = strtok(NULL, delim);
+    plan = plan_buffer;   // point it back at the front of the buffer
+    plan_token = strtok(plan, delim); // get the first token
+    plan_ready = true;
+  }
+}
+
+void execute_plan() {
+  // only parse/setup next statement in the plan if we have finished the previous step
+  if (plan_ready && (step_count == 0)) {
+    int num = 0;
+    if (*plan_token == 'M') {
+      num = parse_int(++plan_token);
+      setup_move(num < 0 ? BWD : FWD, num < 0 ? -num : num);
+    } else if (*plan_token == 'T') {
+      num = parse_int(++plan_token);
+      setup_turn(num < 0 ? 0 : 1, num < 0 ? -num : num); 
+    } else if (*plan_token == 'P') {
+      num = parse_int(++plan_token);
+      // TODO: set_pen_position( num );
     }
-    Serial.println("handlePlan: end");
+    
+    plan_token = strtok(NULL, delim);  // set up the next bit of code to execute
+    if (plan_token == NULL) { // finished the script
+      Serial.println("executePlan: end");
+      plan_ready = false;
+    }
   }
 }
 
@@ -366,6 +376,7 @@ void setup() {
 }
 
 void loop() {
-  server.handleClient();
-  delay(2);            //allow the cpu to switch to other tasks
+  server.handleClient();  // close out any open/pending web transactions
+  execute_plan();      // returns immediately if there's no plan, loops there if there is a plan
+  delay(2);            // allow the cpu to switch to other tasks
 }

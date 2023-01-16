@@ -154,6 +154,809 @@ buttons.forEach(box => {
 
 )VERBATIM";
 
+const char *blockly_js= R"VERBATIM(
+const toolbox1 = {
+  "kind": "flyoutToolbox",
+  "contents": [
+    {
+      "kind": "block",
+      "type": "controls_if"
+    },
+    {
+      "kind": "block",
+      "type": "controls_repeat_ext"
+    },
+    {
+      "kind": "block",
+      "type": "logic_compare"
+    },
+    {
+      "kind": "block",
+      "type": "math_number"
+    },
+    {
+      "kind": "block",
+      "type": "math_arithmetic"
+    },
+    {
+      "kind": "block",
+      "type": "text"
+    },
+    {
+      "kind": "block",
+      "type": "text_print"
+    },
+  ]
+}
+var toolbox = {
+  "kind": "categoryToolbox",
+  "contents": [
+    {
+      "kind": "category",
+      "name": "Logic",
+      "categorystyle": "logic_category",
+      "contents": [
+        {
+          "kind": "category",
+          "name": "If",
+          "contents": [
+            {
+              "kind": "block",
+              "type": "controls_if"
+            },
+            {
+              "kind": "block",
+              "type": "controls_if",
+              "extraState": {
+                "hasElse": "true"
+              }
+            },
+            {
+              "kind": "block",
+              "type": "controls_if",
+              "extraState": {
+                "hasElse": "true",
+                "elseIfCount": 1
+              }
+            }
+          ]
+        },
+        {
+          "kind": "category",
+          "name": "Boolean",
+          "categorystyle": "logic_category",
+          "contents": [
+            {
+              "kind": "block",
+              "type": "logic_compare"
+            },
+            {
+              "kind": "block",
+              "type": "logic_operation"
+            },
+            {
+              "kind": "block",
+              "type": "logic_negate"
+            },
+            {
+              "kind": "block",
+              "type": "logic_boolean"
+            },
+            {
+              "kind": "block",
+              "type": "logic_null"
+            },
+            {
+              "kind": "block",
+              "type": "logic_ternary"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "category",
+      "name": "Loops",
+      "categorystyle": "loop_category",
+      "contents": [
+        {
+          "kind": "block",
+          "type": "controls_repeat_ext",
+          "inputs": {
+            "TIMES": {
+              "block": {
+                "type": "math_number",
+                "fields": {
+                  "NUM": 10
+                }
+              }
+            }
+          }
+        },
+        {
+          "kind": "block",
+          "type": "controls_whileUntil"
+        },
+        {
+          "kind": "block",
+          "type": "controls_for",
+          "fields": {
+            "VAR": "i"
+          },
+          "inputs": {
+            "FROM": {
+              "block": {
+                "type": "math_number",
+                "fields": {
+                  "NUM": 1
+                }
+              }
+            },
+            "TO": {
+              "block": {
+                "type": "math_number",
+                "fields": {
+                  "NUM": 10
+                }
+              }
+            },
+            "BY": {
+              "block": {
+                "type": "math_number",
+                "fields": {
+                  "NUM": 1
+                }
+              }
+            }
+          }
+        },
+        {
+          "kind": "block",
+          "type": "controls_forEach"
+        },
+        {
+          "kind": "block",
+          "type": "controls_flow_statements"
+        }
+      ]
+    },
+    {
+      "kind": "category",
+      "name": "Math",
+      "categorystyle": "math_category",
+      "contents": [
+        {
+          "kind": "block",
+          "type": "math_number",
+          "fields": {
+            "NUM": 123
+          }
+        },
+        {
+          "kind": "block",
+          "type": "math_arithmetic",
+          "fields": {
+            "OP": "ADD"
+          }
+        },
+        {
+          "kind": "block",
+          "type": "math_single",
+          "fields": {
+            "OP": "ROOT"
+          }
+        },
+        {
+          "kind": "block",
+          "type": "math_trig",
+          "fields": {
+            "OP": "SIN"
+          }
+        },
+        {
+          "kind": "block",
+          "type": "math_constant",
+          "fields": {
+            "CONSTANT": "PI"
+          }
+        },
+        {
+          "kind": "block",
+          "type": "math_number_property",
+          "extraState": "<mutation divisor_input=\"false\"></mutation>",
+          "fields": {
+            "PROPERTY": "EVEN"
+          }
+        },
+        {
+          "kind": "block",
+          "type": "math_round",
+          "fields": {
+            "OP": "ROUND"
+          }
+        },
+        {
+          "kind": "block",
+          "type": "math_on_list",
+          "extraState": "<mutation op=\"SUM\"></mutation>",
+          "fields": {
+            "OP": "SUM"
+          }
+        },
+        {
+          "kind": "block",
+          "type": "math_modulo"
+        },
+        {
+          "kind": "block",
+          "type": "math_constrain",
+          "inputs": {
+            "LOW": {
+              "block": {
+                "type": "math_number",
+                "fields": {
+                  "NUM": 1
+                }
+              }
+            },
+            "HIGH": {
+              "block": {
+                "type": "math_number",
+                "fields": {
+                  "NUM": 100
+                }
+              }
+            }
+          }
+        },
+        {
+          "kind": "block",
+          "type": "math_random_int",
+          "kind": "block",
+          "inputs": {
+            "FROM": {
+              "block": {
+                "type": "math_number",
+                "fields": {
+                  "NUM": 1
+                }
+              }
+            },
+            "TO": {
+              "block": {
+                "type": "math_number",
+                "fields": {
+                  "NUM": 100
+                }
+              }
+            }
+          }
+        },
+        {
+          "kind": "block",
+          "type": "math_random_float"
+        },
+        {
+          "kind": "block",
+          "type": "math_atan2"
+        }
+      ]
+    },
+    {
+      "kind": "category",
+      "name": "Lists",
+      "categorystyle": "list_category",
+      "contents": [
+        {
+          "kind": "block",
+          "type": "lists_create_empty"
+        },
+        {
+          "kind": "block",
+          "type": "lists_create_with",
+          "extraState": {
+            "itemCount": 3
+          }
+        },
+        {
+          "kind": "block",
+          "type": "lists_repeat",
+          "inputs": {
+            "NUM": {
+              "block": {
+                "type": "math_number",
+                "fields": {
+                  "NUM": 5
+                }
+              }
+            }
+          }
+        },
+        {
+          "kind": "block",
+          "type": "lists_length"
+        },
+        {
+          "kind": "block",
+          "type": "lists_isEmpty"
+        },
+        {
+          "kind": "block",
+          "type": "lists_indexOf",
+          "fields": {
+            "END": "FIRST"
+          }
+        },
+        {
+          "kind": "block",
+          "type": "lists_getIndex",
+          "fields": {
+            "MODE": "GET",
+            "WHERE": "FROM_START"
+          }
+        },
+        {
+          "kind": "block",
+          "type": "lists_setIndex",
+          "fields": {
+            "MODE": "SET",
+            "WHERE": "FROM_START"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "sep"
+    },
+    {
+      "kind": "category",
+      "name": "Variables",
+      "categorystyle": "variable_category",
+      "custom": "VARIABLE"
+    },
+    {
+      "kind": "category",
+      "name": "Functions",
+      "categorystyle": "procedure_category",
+      "custom": "PROCEDURE"
+    },
+    {
+      "kind": "category",
+      "name": "Library",
+      "expanded": "true",
+      "contents": [
+        {
+          "kind": "category",
+          "name": "Randomize",
+          "contents": [
+            {
+              "kind": "block",
+              "type": "procedures_defnoreturn",
+              "extraState": {
+                "params": [
+                  {
+                    "name": "list"
+                  }
+                ]
+              },
+              "icons": {
+                "comment": {
+                  "text": "Describe this function...",
+                  "pinned": false,
+                  "height": 80,
+                  "width": 160
+                }
+              },
+              "fields": {
+                "NAME": "randomize"
+              },
+              "inputs": {
+                "STACK": {
+                  "block": {
+                    "type": "controls_for",
+                    "fields": {
+                      "VAR": {
+                        "name": "x"
+                      }
+                    },
+                    "inputs": {
+                      "FROM": {
+                        "block": {
+                          "type": "math_number",
+                          "fields": {
+                            "NUM": 1
+                          }
+                        }
+                      },
+                      "TO": {
+                        "block": {
+                          "type": "lists_length",
+                          "inline": false,
+                          "inputs": {
+                            "VALUE": {
+                              "block": {
+                                "type": "variables_get",
+                                "fields": {
+                                  "VAR": {
+                                    "name": "list"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "BY": {
+                        "block": {
+                          "type": "math_number",
+                          "fields": {
+                            "NUM": 1
+                          }
+                        }
+                      },
+                      "DO": {
+                        "block": {
+                          "type": "variables_set",
+                          "inline": false,
+                          "fields": {
+                            "VAR": {
+                              "name": "y"
+                            }
+                          },
+                          "inputs": {
+                            "VALUE": {
+                              "block": {
+                                "type": "math_random_int",
+                                "inputs": {
+                                  "FROM": {
+                                    "block": {
+                                      "type": "math_number",
+                                      "fields": {
+                                        "NUM": 1
+                                      }
+                                    }
+                                  },
+                                  "TO": {
+                                    "block": {
+                                      "type": "lists_length",
+                                      "inline": false,
+                                      "inputs": {
+                                        "VALUE": {
+                                          "block": {
+                                            "type": "variables_get",
+                                            "fields": {
+                                              "VAR": {
+                                                "name": "list"
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "next": {
+                            "block": {
+                              "type": "variables_set",
+                              "inline": false,
+                              "fields": {
+                                "VAR": {
+                                  "name": "temp"
+                                }
+                              },
+                              "inputs": {
+                                "VALUE": {
+                                  "block": {
+                                    "type": "lists_getIndex",
+                                    "fields": {
+                                      "MODE": "GET",
+                                      "WHERE": "FROM_START"
+                                    },
+                                    "inputs": {
+                                      "VALUE": {
+                                        "block": {
+                                          "type": "variables_get",
+                                          "fields": {
+                                            "VAR": {
+                                              "name": "list"
+                                            }
+                                          }
+                                        }
+                                      },
+                                      "AT": {
+                                        "block": {
+                                          "type": "variables_get",
+                                          "fields": {
+                                            "VAR": {
+                                              "name": "y"
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              "next": {
+                                "block": {
+                                  "type": "lists_setIndex",
+                                  "inline": false,
+                                  "fields": {
+                                    "MODE": "SET",
+                                    "WHERE": "FROM_START"
+                                  },
+                                  "inputs": {
+                                    "LIST": {
+                                      "block": {
+                                        "type": "variables_get",
+                                        "fields": {
+                                          "VAR": {
+                                            "name": "list"
+                                          }
+                                        }
+                                      }
+                                    },
+                                    "AT": {
+                                      "block": {
+                                        "type": "variables_get",
+                                        "fields": {
+                                          "VAR": {
+                                            "name": "y"
+                                          }
+                                        }
+                                      }
+                                    },
+                                    "TO": {
+                                      "block": {
+                                        "type": "lists_getIndex",
+                                        "fields": {
+                                          "MODE": "GET",
+                                          "WHERE": "FROM_START"
+                                        },
+                                        "inputs": {
+                                          "VALUE": {
+                                            "block": {
+                                              "type": "variables_get",
+                                              "fields": {
+                                                "VAR": {
+                                                  "name": "list"
+                                                }
+                                              }
+                                            }
+                                          },
+                                          "AT": {
+                                            "block": {
+                                              "type": "variables_get",
+                                              "fields": {
+                                                "VAR": {
+                                                  "name": "x"
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "next": {
+                                    "block": {
+                                      "type": "lists_setIndex",
+                                      "inline": false,
+                                      "fields": {
+                                        "MODE": "SET",
+                                        "WHERE": "FROM_START"
+                                      },
+                                      "inputs": {
+                                        "LIST": {
+                                          "block": {
+                                            "type": "variables_get",
+                                            "fields": {
+                                              "VAR": {
+                                                "name": "list"
+                                              }
+                                            }
+                                          }
+                                        },
+                                        "AT": {
+                                          "block": {
+                                            "type": "variables_get",
+                                            "fields": {
+                                              "VAR": {
+                                                "name": "x"
+                                              }
+                                            }
+                                          }
+                                        },
+                                        "TO": {
+                                          "block": {
+                                            "type": "variables_get",
+                                            "fields": {
+                                              "VAR": {
+                                                "name": "temp"
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "kind": "category",
+          "name": "Jabberwocky",
+          "contents": [
+            {
+              "kind": "block",
+              "type": "text_print",
+              "inputs": {
+                "TEXT": {
+                  "block": {
+                    "type": "text",
+                    "fields": {
+                      "TEXT": "'Twas brillig, and the slithy toves"
+                    }
+                  }
+                }
+              },
+              "next": {
+                "block": {
+                  "type": "text_print",
+                  "inputs": {
+                    "TEXT": {
+                      "block": {
+                        "type": "text",
+                        "fields": {
+                          "TEXT": "  Did gyre and gimble in the wabe:"
+                        }
+                      }
+                    }
+                  },
+                  "next": {
+                    "block": {
+                      "type": "text_print",
+                      "inputs": {
+                        "TEXT": {
+                          "block": {
+                            "type": "text",
+                            "fields": {
+                              "TEXT": "All mimsy were the borogroves,"
+                            }
+                          }
+                        }
+                      },
+                      "next": {
+                        "block": {
+                          "type": "text_print",
+                          "inputs": {
+                            "TEXT": {
+                              "block": {
+                                "type": "text",
+                                "fields": {
+                                  "TEXT": "  And the mome raths outgrabe."
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "kind": "block",
+              "type": "text_print",
+              "inputs": {
+                "TEXT": {
+                  "block": {
+                    "type": "text",
+                    "fields": {
+                      "TEXT": "\"Beware the Jabberwock, my son!"
+                    }
+                  }
+                }
+              },
+              "next": {
+                "block": {
+                  "type": "text_print",
+                  "inputs": {
+                    "TEXT": {
+                      "block": {
+                        "type": "text",
+                        "fields": {
+                          "TEXT": "  The jaws that bite, the claws that catch!"
+                        }
+                      }
+                    }
+                  },
+                  "next": {
+                    "block": {
+                      "type": "text_print",
+                      "inputs": {
+                        "TEXT": {
+                          "block": {
+                            "type": "text",
+                            "fields": {
+                              "TEXT": "Beware the Jubjub bird, and shun"
+                            }
+                          }
+                        }
+                      },
+                      "next": {
+                        "block": {
+                          "type": "text_print",
+                          "inputs": {
+                            "TEXT": {
+                              "block": {
+                                "type": "text",
+                                "fields": {
+                                  "TEXT": "  The frumious Bandersnatch!\""
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+
+const blocklyArea = document.getElementById('blocklyArea');
+const blocklyDiv = document.getElementById('blocklyDiv');
+const workspace = Blockly.inject(blocklyDiv, { toolbox: toolbox });
+// const workspace = Blockly.inject(blocklyDiv);
+const onresize = function(e) {
+  // Compute the absolute coordinates and dimensions of blocklyArea.
+  var element = blocklyArea;
+  let x = 0;
+  let y = 0;
+  do {
+    x += element.offsetLeft;
+    y += element.offsetTop;
+    element = element.offsetParent;
+  } while (element);
+  // Position blocklyDiv over blocklyArea.
+  blocklyDiv.style.left = x + 'px';
+  blocklyDiv.style.top = y + 'px';
+  blocklyDiv.style.width = blocklyArea.offsetWidth + 'px';
+  blocklyDiv.style.height = blocklyArea.offsetHeight + 'px';
+  Blockly.svgResize(workspace);
+};
+window.addEventListener('resize', onresize, false);
+onresize();
+
+function updateCode(event) {
+  const code = Blockly.JavaScript.workspaceToCode(workspace);
+  // console.log(code + "\n");
+  document.getElementById('blocklyCodeArea').innerHTML = code;
+}
+workspace.addChangeListener(updateCode);
+)VERBATIM";
+
 const char *style_css= R"VERBATIM(
 html, body {
   font-family: sans-serif;
@@ -223,6 +1026,12 @@ td {
   vertical-align: top;
 }
 
+.secret_link {
+  color: orange;
+}
+.secret_link:hover {
+  cursor: pointer;
+}
 .container {
   width: 100%;
   height: 100%;
@@ -283,6 +1092,10 @@ td {
 
 .undo_button {
   background-color: #ff9500;
+}
+
+.abort_button {
+  background-color: #ff7070;
 }
 
 .button_contents {
@@ -446,6 +1259,70 @@ const char *settings_html= R"VERBATIM(
 </html>
 )VERBATIM";
 
+const char *blockly_html= R"VERBATIM(
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>Boxbot Blockly Beta</title>
+  <style>
+    html,
+    body {
+      height: 100%;
+      margin: 0;
+    }
+
+    body {
+      background-color: #fff;
+      font-family: "Gill Sans", sans-serif;
+      overflow: hidden;
+    }
+
+    h1 {
+      font-weight: normal;
+      font-size: 140%;
+    }
+
+    table {
+      height: 100%;
+      width: 100%;
+    }
+
+    #blocklyArea {
+      height: 99%;
+      background: #fc9;
+      text-align: center;
+    }
+  </style>
+  <script src="https://unpkg.com/blockly/blockly.min.js"></script>
+  <script src="https://unpkg.com/blockly/blocks_compressed.js"></script>
+  <script src="https://unpkg.com/blockly/javascript_compressed.js"></script>
+  <script src="https://unpkg.com/blockly/msg/js/en.js"></script>
+</head>
+
+<body>
+  <table>
+    <tr>
+      <td colspan="2">
+        Blockly Boxbot 0.1
+      </td>
+    </tr>
+    <tr>
+      <td id="blocklyArea">
+        <div id="blocklyDiv" style="position: absolute"></div>
+      </td>
+      <td style="background-color: tan;">
+        <pre id="blocklyCodeArea"></pre>
+      </td>
+    </tr>
+  </table>
+  <script src="blockly.js"></script>
+</body>
+
+</html>
+)VERBATIM";
+
 const char *index_html= R"VERBATIM(
 <!DOCTYPE html>
 <html>
@@ -459,105 +1336,111 @@ const char *index_html= R"VERBATIM(
 </head>
 
 <body style="width:100%;">
-  <div class="banner">Chabot Space and Science Center presents: Tinkering School Boxbot Beta</div>
-  <table style="width:100%">
-    <tr>
-      <td class="command_container">
-        <table width="100%;">
-          <!-- first row -->
-          <tr>
-            <td id="MOV_FWD_1" class="panel_button fwd_style">
-              <div class="button_contents">Forward 1</div>
-            </td>
-            <td id="MOV_BWD_1" class="panel_button bwd_style">
-              <div class="button_contents">Backward 1</div>
-            </td>
-            <td id="TRN_LT_15" class="panel_button left_style">
-              <div class="button_contents">Left 15</div>
-            </td>
-            <td id="TRN_RT_15" class="panel_button right_style">
-              <div class="button_contents">Right 15</div>
-            </td>
-          </tr>
+  <div class="banner" style="width: 100%;">Tinkering School Boxbot
+    <span class="secret_link" onclick="window.location.href = 'blockly.html'">&nbsp;[Beta 0.2]</span>
+  </div>
+  <tr>
+    <td class="command_container">
+      <table width="100%;">
+        <!-- first row -->
+        <tr>
+          <td id="MOV_FWD_1" class="panel_button fwd_style">
+            <div class="button_contents">Forward 1</div>
+          </td>
+          <td id="MOV_BWD_1" class="panel_button bwd_style">
+            <div class="button_contents">Backward 1</div>
+          </td>
+          <td id="TRN_LT_15" class="panel_button left_style">
+            <div class="button_contents">Left 15</div>
+          </td>
+          <td id="TRN_RT_15" class="panel_button right_style">
+            <div class="button_contents">Right 15</div>
+          </td>
+        </tr>
 
-          <!-- second row -->
-          <tr>
-            <td id="MOV_FWD_5" class="panel_button fwd_style">
-              <div class="button_contents">Forward 5</div>
-            </td>
-            <td id="MOV_BWD_5" class="panel_button bwd_style">
-              <div class="button_contents">Backward 5</div>
-            </td>
-            <td id="TRN_LT_30" class="panel_button left_style">
-              <div class="button_contents">Left 30</div>
-            </td>
-            <td id="TRN_RT_30" class="panel_button right_style">
-              <div class="button_contents">Right 30</div>
-            </td>
-          </tr>
+        <!-- second row -->
+        <tr>
+          <td id="MOV_FWD_5" class="panel_button fwd_style">
+            <div class="button_contents">Forward 5</div>
+          </td>
+          <td id="MOV_BWD_5" class="panel_button bwd_style">
+            <div class="button_contents">Backward 5</div>
+          </td>
+          <td id="TRN_LT_30" class="panel_button left_style">
+            <div class="button_contents">Left 30</div>
+          </td>
+          <td id="TRN_RT_30" class="panel_button right_style">
+            <div class="button_contents">Right 30</div>
+          </td>
+        </tr>
 
-          <!-- third row -->
-          <tr>
-            <td id="MOV_FWD_10" class="panel_button fwd_style">
-              <div class="button_contents">Forward 10</div>
-            </td>
-            <td id="MOV_BWD_10" class="panel_button bwd_style">
-              <div class="button_contents">Backward 10</div>
-            </td>
-            <td id="TRN_LT_90" class="panel_button left_style">
-              <div class="button_contents">Left 90</div>
-            </td>
-            <td id="TRN_RT_90" class="panel_button right_style">
-              <div class="button_contents">Right 90</div>
-            </td>
-          </tr>
+        <!-- third row -->
+        <tr>
+          <td id="MOV_FWD_10" class="panel_button fwd_style">
+            <div class="button_contents">Forward 10</div>
+          </td>
+          <td id="MOV_BWD_10" class="panel_button bwd_style">
+            <div class="button_contents">Backward 10</div>
+          </td>
+          <td id="TRN_LT_90" class="panel_button left_style">
+            <div class="button_contents">Left 90</div>
+          </td>
+          <td id="TRN_RT_90" class="panel_button right_style">
+            <div class="button_contents">Right 90</div>
+          </td>
+        </tr>
 
-          <!-- fourth row -->
+        <!-- fourth row -->
+        <tr>
+          <td id="MOV_FWD_20" class="panel_button fwd_style">
+            <div class="button_contents">Forward 20</div>
+          </td>
+          <td id="MOV_BWD_20" class="panel_button bwd_style">
+            <div class="button_contents">Backward 20</div>
+          </td>
+          <td id="TRN_LT_180" class="panel_button left_style">
+            <div class="button_contents">Left 180</div>
+          </td>
+          <td id="TRN_RT_180" class="panel_button right_style">
+            <div class="button_contents">Right 180</div>
+          </td>
+        </tr>
+      </table>
+    </td>
+
+    <td>
+      <div class="code_container">
+        <div class="main_pane">
+          <div class="panel_title" onclick="forceRefresh(event)">Motion Plan</div>
+          <div id="lines_of_code"></div>
+        </div>
+        <table width="100%" style="vertical-align:bottom;">
           <tr>
-            <td id="MOV_FWD_20" class="panel_button fwd_style">
-              <div class="button_contents">Forward 20</div>
+            <td>
+              <div id="button_undo" class="code_button undo_button" onclick="undoCode(event)">
+                <div class="code_button_contents">Undo</div>
+              </div>
             </td>
-            <td id="MOV_BWD_20" class="panel_button bwd_style">
-              <div class="button_contents">Backward 20</div>
+            <td>
+              <div id="button_clear" class="code_button clear_plan_button" onclick="clearCode(event)">
+                <div class="code_button_contents">Clear Plan</div>
+              </div>
             </td>
-            <td id="TRN_LT_180" class="panel_button left_style">
-              <div class="button_contents">Left 180</div>
+            <td>
+              <div id="button_send" class="code_button" onclick="sendCode(event)">
+                <div class="code_button_contents">Uplink</div>
+              </div>
             </td>
-            <td id="TRN_RT_180" class="panel_button right_style">
-              <div class="button_contents">Right 180</div>
+            <td>
+              <div id="button_abort" class="code_button abort_button" onclick="boxbot_stop(event)">
+                <div class="code_button_contents">ABORT</div>
+              </div>
             </td>
           </tr>
         </table>
-      </td>
-
-      <td>
-        <div class="code_container">
-          <div class="main_pane">
-            <div class="panel_title" onclick="forceRefresh(event)">Motion Plan</div>
-            <div id="lines_of_code"></div>
-          </div>
-          <table width="100%" style="vertical-align:bottom;">
-            <tr>
-              <td>
-                <div id="button_undo" class="code_button undo_button" onclick="undoCode(event)">
-                  <div class="code_button_contents">Undo</div>
-                </div>
-              </td>
-              <td>
-                <div id="button_clear" class="code_button clear_plan_button" onclick="clearCode(event)">
-                  <div class="code_button_contents">Clear Plan</div>
-                </div>
-              </td>
-              <td>
-                <div id="button_send" class="code_button" onclick="sendCode(event)">
-                  <div class="code_button_contents">UPLINK</div>
-                </div>
-              </td>
-            </tr>
-          </table>
-        </div>
-      </td>
-    </tr>
+      </div>
+    </td>
+  </tr>
   </table>
   <pre style="color:aliceblue" id="error_panel"></pre>
   <script src="script.js"></script>
