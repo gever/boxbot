@@ -1123,6 +1123,10 @@ td {
   background-color: #7FA1FF; 
 }
 
+.servo_style {
+  background-color: white; 
+}
+
 .latest_image {
   width: 800px;
   height: 600px;
@@ -1339,6 +1343,7 @@ const char *index_html= R"VERBATIM(
   <div class="banner" style="width: 100%;">Tinkering School Boxbot
     <span class="secret_link" onclick="window.location.href = 'blockly.html'">&nbsp;[Beta 0.2]</span>
   </div>
+  <table>
   <tr>
     <td class="command_container">
       <table width="100%;">
@@ -1405,6 +1410,25 @@ const char *index_html= R"VERBATIM(
             <div class="button_contents">Right 180</div>
           </td>
         </tr>
+
+       <!-- fifth row (Sylvia's experimental servo section!)
+        <tr>
+          <td id="Servo_CW 90" class="panel_button servo_style">
+            <div class="button_contents">Servo CW 90</div>
+          </td>
+          <td id="Servo CW 180" class="panel_button servo_style">
+            <div class="button_contents">Servo CW 180</div>
+          </td>
+          <td id="Servo CCW 90" class="panel_button servo_style">
+            <div class="button_contents">Servo CCW 90</div>
+          </td>
+          <td id="Servo CCW 180" class="panel_button servo_style">
+            <div class="button_contents">Servo CCW 180</div>
+          </td>
+        </tr> 
+        --> 
+
+        
       </table>
     </td>
 

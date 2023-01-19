@@ -21,17 +21,8 @@ float linear_motion_fudge = 1.0;
 bool wheels_forward = true;
 
 // Set these to your desired credentials.
-const char *ssid = "silly-pickle";
-const char *password = (char *)NULL;
-
-WebServer server(80);
-
-// all the fiddly bits having to do with executing the current script (TODO: encapsulate)
-#define MAX_PLAN_LEN 256
-bool plan_ready = false;        // signals main loop to start the plan
-char plan_buffer[MAX_PLAN_LEN];
-const char delim[] = ",\n";
-char *plan = NULL;
+const char *ssid = "happy-frog";
+const char *password = (char *)NULL; 
 char *plan_token = NULL; // get the first token
 
 
