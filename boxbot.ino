@@ -13,6 +13,7 @@
 
 // the gui is (currently) served as static "files" from memory
 #include "html_files.h"  // script-generated in the repl.it repo: https://replit.com/@gever/bbdebuggui
+WebServer server(80);
 
 // things that can be set through settings UI
 uint16_t motor_step_rate = 950;
@@ -21,10 +22,16 @@ float linear_motion_fudge = 1.0;
 bool wheels_forward = true;
 
 // Set these to your desired credentials.
-const char *ssid = "happy-frog";
+const char *ssid = "silly-bobcat";
 const char *password = (char *)NULL; 
-char *plan_token = NULL; // get the first token
 
+// primitive motion plan parsing/interpreting
+#define MAX_PLAN_LEN 1024
+char *plan_token = NULL;
+bool plan_ready = false;
+char plan_buffer[MAX_PLAN_LEN];
+char *plan = NULL;
+const char delim[] = ",\n"; 
 
 // hardware clock to step the motors at a good rate
 hw_timer_t *step_timer = NULL;
