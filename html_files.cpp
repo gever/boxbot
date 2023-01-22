@@ -1,159 +1,6 @@
 /**********************************************************
 DO NOT EDIT - BUILT BY THE BUILD SCRIPT: https://replit.com/@gever/bbdebuggui
 *************************************************************/ 
-const char *script_js= R"VERBATIM(
-function report_error(error_message) {
-  document.getElementById("error_panel").innerHTML += error_message;
-}
-
-// immediate motion 
-function boxbot_move(v) {
-  fetch('/move?a=' + v); // .then((response) => console.log(response.json()));
-}
-function boxbot_turn(v) {
-  fetch('/turn?a=' + v); // .then((response) => console.log(response.json()));
-}
-function boxbot_stop(v) {
-  fetch('/stop'); // .then((response) => console.log(response.json()));
-}
-function boxbot_send_plan(plan) {
-  fetch('/plan?a=' + plan); //.then((response) => console.log(response.json()));
-  console.log('plan: ' + plan);
-}
-
-// motion planning support
-// add click handlers to all of the command panel buttons
-const buttons = document.querySelectorAll('.panel_button');
-const lines_of_code = document.querySelectorAll("#lines_of_code")[0];
-
-// TODO: consider adding a BOOP noise
-function confirmationAnimation(elem) {
-  var original_color = elem.style.backgroundColor;
-  elem.style.backgroundColor = "white";
-  setTimeout(function() {
-    elem.style.backgroundColor = original_color;
-  }, 150);
-}
-
-function addLineOfCode(evt, id, bg_color) {
-  if (lines_of_code.childElementCount <= 9) {
-    confirmationAnimation(evt.target);
-    var elem = document.createElement("pre");
-    // translate the button id into code
-    elem.innerHTML = id.split('_').join(' ');
-    elem.style.backgroundColor = bg_color;
-    lines_of_code.appendChild(elem);
-  } else {
-    console.log("line limit");
-    console.log(lines_of_code.length);
-  }
-}
-
-function deleteTheCode() {
-  while (lines_of_code.firstChild) {
-    lines_of_code.removeChild(lines_of_code.firstChild);
-  }
-}
-function clearCode(evt) {
-  confirmationAnimation(evt.target);
-  deleteTheCode();
-}
-
-function undoCode(evt) {
-  confirmationAnimation(evt.target);
-  if (lines_of_code.lastChild) {
-    lines_of_code.removeChild(lines_of_code.lastChild);
-  }
-}
-
-// encode the "motion plan" in a dense format that is
-// easier to parse on the boxbot (until python/lisp are working)
-// input:
-//   MOV,FWD,10
-//   MOV,BWD,10
-//   TRN,LT,90
-//   TRN,RT,90
-//   TRN,LT,30
-//   TRN,RT,30
-//   MOV,FWD,5
-//   MOV,BWD,5
-//   TRN,LT,180
-//   TRN,RT,180
-//  output:
-//   M10,M-10,T-90,T90,T-30,T30,M-5,M5,T-180,T180
-function boxbot_translate(raw_code) {
-  var code = raw_code.split("\n");
-  var output = "";
-  for (var i = 0; i < code.length; i++) {
-    var line = code[i];
-    if (line.length == 0) continue;
-
-    var parts = line.split(",");
-    var opcode = parts[0];
-    var modifier = parts[1];
-    var param = parts[2];
-    if (output.length > 0) {
-      output += ",";
-    }
-    if (opcode == "TRN") {
-      output += "T";
-    } else if (opcode == "MOV") {
-      output += "M";
-    } else {
-      return "ERROR: unknown opcode: " + opcode;
-    }
-    if ((modifier == "LT") || (modifier == "BWD")) {
-      output += "-";
-    }
-    output += param;
-  }
-  return output;
-}
-
-var last_send = Date.now();
-function sendCode(evt) {
-  if ((Date.now() - last_send) < 1000) {
-    // don't let them pound the send button
-    return;
-  }
-  last_send = Date.now();
-
-  // collect the code
-  confirmationAnimation(evt.target);
-  var current = lines_of_code.firstChild;
-  var code_blob = "";
-  while (current) {
-    code_blob += current.innerHTML + "\n";
-    current = current.nextSibling;
-  }
-  code_blob = code_blob.split(' ').join(',');
-  var translated = boxbot_translate(code_blob);
-  if (translated.startsWith("ERROR")) {
-    console.log(translated);
-  } else {
-    // report_error("sending: " + translated + "\n")
-    boxbot_send_plan(translated);
-    // console.log("Code---");
-    // console.log(code_blob);
-    // window.BU_send( code_blob );
-    setTimeout(deleteTheCode, 500);
-  }
-}
-
-function forceRefresh() {
-  window.location.reload();
-}
-
-// add the click handlers to the buttons
-buttons.forEach(box => {
-  box.addEventListener('click', function handleClick(event) {
-    addLineOfCode(event, box.id, window.getComputedStyle(box).backgroundColor);
-  });
-});
-
-
-)VERBATIM";
-
 const char *blockly_js= R"VERBATIM(
 const toolbox1 = {
   "kind": "flyoutToolbox",
@@ -957,6 +804,186 @@ function updateCode(event) {
 workspace.addChangeListener(updateCode);
 )VERBATIM";
 
+const char *script_js= R"VERBATIM(
+function report_error(error_message) {
+  document.getElementById("error_panel").innerHTML += error_message;
+}
+
+// immediate motion 
+function boxbot_move(v) {
+  fetch('/move?a=' + v); // .then((response) => console.log(response.json()));
+}
+function boxbot_turn(v) {
+  fetch('/turn?a=' + v); // .then((response) => console.log(response.json()));
+}
+function boxbot_stop(v) {
+  fetch('/stop'); // .then((response) => console.log(response.json()));
+}
+function boxbot_send_plan(plan) {
+  fetch('/plan?a=' + plan); //.then((response) => console.log(response.json()));
+  console.log('plan: ' + plan);
+}
+
+// motion planning support
+// add click handlers to all of the command panel buttons
+const buttons = document.querySelectorAll('.panel_button');
+var lines_of_code = document.querySelectorAll("#code_area")[0];
+var total_energy_cost = 0;
+
+// TODO: consider adding a BOOP noise
+function confirmationAnimation(elem) {
+  var original_color = elem.style.backgroundColor;
+  elem.style.backgroundColor = "white";
+  setTimeout(function() {
+    elem.style.backgroundColor = original_color;
+  }, 150);
+}
+
+function collect_code() {
+  var current = lines_of_code.firstChild;
+  var code_blob = "";
+  while (current) {
+    code_blob += current.innerHTML + "\n";
+    current = current.nextSibling;
+  }
+  code_blob = code_blob.split(' ').join(',');
+  return (code_blob);
+}
+
+// translate the BUCL parameter into an energy cost (SO BRITTLE!)
+var cost_table = { 1: 1, 5: 5, 10: 10, 20: 20, 15: 1, 30: 2, 90: 6, 180: 12 };
+function recalculateCost() {
+  var current = lines_of_code.firstChild;
+  var sub_total = 0;
+  while (current) {
+    var text = current.innerHTML;
+    sub_total += cost_table[parseInt(text.split(' ')[2])];
+    current = current.nextSibling;
+  }
+  var span = document.querySelector('#total_energy_cost');
+  span.innerHTML = "Energy Cost: " + (total_energy_cost + sub_total);
+
+  return (sub_total);
+}
+
+function addLineOfCode(evt, id, bg_color) {
+  if (lines_of_code.childElementCount <= 9) {
+    confirmationAnimation(evt.target);
+    var elem = document.createElement("pre");
+    // translate the button id into code
+    elem.innerHTML = id.split('_').join(' ');
+    elem.style.backgroundColor = bg_color;
+    lines_of_code.appendChild(elem);
+    recalculateCost();
+  } else {
+    console.log("line limit");
+    console.log(lines_of_code.length);
+  }
+}
+
+function deleteTheCode() {
+  while (lines_of_code.firstChild) {
+    lines_of_code.removeChild(lines_of_code.firstChild);
+  }
+  recalculateCost();
+}
+function clearCode(evt) {
+  confirmationAnimation(evt.target);
+  deleteTheCode();
+  recalculateCost();
+}
+
+function undoCode(evt) {
+  confirmationAnimation(evt.target);
+  if (lines_of_code.lastChild) {
+    lines_of_code.removeChild(lines_of_code.lastChild);
+  }
+  recalculateCost();
+}
+
+// encode the "motion plan" in a dense format that is
+// easier to parse on the boxbot (until python/lisp are working)
+// input:
+//   MOV,FWD,10
+//   MOV,BWD,10
+//   TRN,LT,90
+//   TRN,RT,90
+//   TRN,LT,30
+//   TRN,RT,30
+//   MOV,FWD,5
+//   MOV,BWD,5
+//   TRN,LT,180
+//   TRN,RT,180
+//  output:
+//   M10,M-10,T-90,T90,T-30,T30,M-5,M5,T-180,T180
+function boxbot_translate(raw_code) {
+  var code = raw_code.split("\n");
+  var output = "";
+  for (var i = 0; i < code.length; i++) {
+    var line = code[i];
+    if (line.length == 0) continue;
+
+    var parts = line.split(",");
+    var opcode = parts[0];
+    var modifier = parts[1];
+    var param = parts[2];
+    if (output.length > 0) {
+      output += ",";
+    }
+    if (opcode == "TRN") {
+      output += "T";
+    } else if (opcode == "MOV") {
+      output += "M";
+    } else {
+      return "ERROR: unknown opcode: " + opcode;
+    }
+    if ((modifier == "LT") || (modifier == "BWD")) {
+      output += "-";
+    }
+    output += param;
+  }
+  return output;
+}
+
+var last_send = Date.now();
+function sendCode(evt) {
+  if ((Date.now() - last_send) < 1000) {
+    // don't let them pound the send button
+    return;
+  }
+  last_send = Date.now();
+
+  // collect the code
+  confirmationAnimation(evt.target);
+  total_energy_cost += recalculateCost();
+  var code_blob = collect_code();
+  var translated = boxbot_translate(code_blob);
+  if (translated.startsWith("ERROR")) {
+    console.log(translated);
+  } else {
+    // report_error("sending: " + translated + "\n")
+    boxbot_send_plan(translated);
+    // console.log("Code---");
+    // console.log(code_blob);
+    // window.BU_send( code_blob );
+    setTimeout(deleteTheCode, 500);
+  }
+}
+
+function forceRefresh() {
+  window.location.reload();
+}
+
+// add the click handlers to the buttons
+buttons.forEach(box => {
+  box.addEventListener('click', function handleClick(event) {
+    addLineOfCode(event, box.id, window.getComputedStyle(box).backgroundColor);
+  });
+});
+
+
+)VERBATIM";
+
 const char *style_css= R"VERBATIM(
 html, body {
   font-family: sans-serif;
@@ -1150,6 +1177,14 @@ pre {
   margin: 2px;
   font-size: 20px;
 }
+
+.energy_cost {
+  font-weight: lighter;
+  font-size: 80%;
+  color: grey;
+  float: right;
+  margin-right: 10px;
+}
 )VERBATIM";
 
 const char *touch_go_html= R"VERBATIM(
@@ -1341,77 +1376,85 @@ const char *index_html= R"VERBATIM(
 
 <body style="width:100%;">
   <div class="banner" style="width: 100%;">Tinkering School Boxbot
-    <span class="secret_link" onclick="window.location.href = 'blockly.html'">&nbsp;[Beta 0.2]</span>
+    <span id='total_energy_cost' style="float:right; margin-right: 20px;">Energy Cost: 0</span>
   </div>
   <table>
-  <tr>
-    <td class="command_container">
-      <table width="100%;">
-        <!-- first row -->
-        <tr>
-          <td id="MOV_FWD_1" class="panel_button fwd_style">
-            <div class="button_contents">Forward 1</div>
-          </td>
-          <td id="MOV_BWD_1" class="panel_button bwd_style">
-            <div class="button_contents">Backward 1</div>
-          </td>
-          <td id="TRN_LT_15" class="panel_button left_style">
-            <div class="button_contents">Left 15</div>
-          </td>
-          <td id="TRN_RT_15" class="panel_button right_style">
-            <div class="button_contents">Right 15</div>
-          </td>
-        </tr>
+    <tr>
+      <td class="command_container">
+        <table width="100%;">
+          <!-- first row -->
+          <tr>
+            <td id="MOV_FWD_1" class="panel_button fwd_style" cost="1">
+              <div class="button_contents">Forward 1</div>
+            </td>
+            <td id="MOV_BWD_1" class="panel_button bwd_style">
+              <div class="button_contents">Backward 1</div>
+            </td>
+            <td id="TRN_LT_15" class="panel_button left_style">
+              <div class="button_contents">Left 15</div>
+              <div class="energy_cost">[1]</div>
+            </td>
+            <td id="TRN_RT_15" class="panel_button right_style">
+              <div class="button_contents">Right 15</div>
+              <div class="energy_cost">[1]</div>
+            </td>
+          </tr>
 
-        <!-- second row -->
-        <tr>
-          <td id="MOV_FWD_5" class="panel_button fwd_style">
-            <div class="button_contents">Forward 5</div>
-          </td>
-          <td id="MOV_BWD_5" class="panel_button bwd_style">
-            <div class="button_contents">Backward 5</div>
-          </td>
-          <td id="TRN_LT_30" class="panel_button left_style">
-            <div class="button_contents">Left 30</div>
-          </td>
-          <td id="TRN_RT_30" class="panel_button right_style">
-            <div class="button_contents">Right 30</div>
-          </td>
-        </tr>
+          <!-- second row -->
+          <tr>
+            <td id="MOV_FWD_5" class="panel_button fwd_style">
+              <div class="button_contents">Forward 5</div>
+            </td>
+            <td id="MOV_BWD_5" class="panel_button bwd_style">
+              <div class="button_contents">Backward 5</div>
+            </td>
+            <td id="TRN_LT_30" class="panel_button left_style">
+              <div class="button_contents">Left 30</div>
+              <div class="energy_cost">[2]</div>
+            </td>
+            <td id="TRN_RT_30" class="panel_button right_style">
+              <div class="button_contents">Right 30</div>
+              <div class="energy_cost">[2]</div>
+            </td>
+          </tr>
 
-        <!-- third row -->
-        <tr>
-          <td id="MOV_FWD_10" class="panel_button fwd_style">
-            <div class="button_contents">Forward 10</div>
-          </td>
-          <td id="MOV_BWD_10" class="panel_button bwd_style">
-            <div class="button_contents">Backward 10</div>
-          </td>
-          <td id="TRN_LT_90" class="panel_button left_style">
-            <div class="button_contents">Left 90</div>
-          </td>
-          <td id="TRN_RT_90" class="panel_button right_style">
-            <div class="button_contents">Right 90</div>
-          </td>
-        </tr>
+          <!-- third row -->
+          <tr>
+            <td id="MOV_FWD_10" class="panel_button fwd_style">
+              <div class="button_contents">Forward 10</div>
+            </td>
+            <td id="MOV_BWD_10" class="panel_button bwd_style">
+              <div class="button_contents">Backward 10</div>
+            </td>
+            <td id="TRN_LT_90" class="panel_button left_style">
+              <div class="button_contents">Left 90</div>
+              <div class="energy_cost">[6]</div>
+            </td>
+            <td id="TRN_RT_90" class="panel_button right_style">
+              <div class="button_contents">Right 90</div>
+              <div class="energy_cost">[6]</div>
+            </td>
+          </tr>
 
-        <!-- fourth row -->
-        <tr>
-          <td id="MOV_FWD_20" class="panel_button fwd_style">
-            <div class="button_contents">Forward 20</div>
-          </td>
-          <td id="MOV_BWD_20" class="panel_button bwd_style">
-            <div class="button_contents">Backward 20</div>
-          </td>
-          <td id="TRN_LT_180" class="panel_button left_style">
-            <div class="button_contents">Left 180</div>
-          </td>
-          <td id="TRN_RT_180" class="panel_button right_style">
-            <div class="button_contents">Right 180</div>
-          </td>
-        </tr>
+          <!-- fourth row -->
+          <tr>
+            <td id="MOV_FWD_20" class="panel_button fwd_style">
+              <div class="button_contents">Forward 20</div>
+            </td>
+            <td id="MOV_BWD_20" class="panel_button bwd_style">
+              <div class="button_contents">Backward 20</div>
+            </td>
+            <td id="TRN_LT_180" class="panel_button left_style">
+              <div class="button_contents">Left 180</div>
+              <div class="energy_cost">[12]</div>
+            </td>
+            <td id="TRN_RT_180" class="panel_button right_style">
+              <div class="button_contents">Right 180</div>
+              <div class="energy_cost">[12]</div>
+            </td>
+          </tr>
 
-       <!-- fifth row (Sylvia's experimental servo section!)
+          <!-- fifth row (Sylvia's experimental servo section!)
         <tr>
           <td id="Servo_CW 90" class="panel_button servo_style">
             <div class="button_contents">Servo CW 90</div>
@@ -1426,44 +1469,44 @@ const char *index_html= R"VERBATIM(
             <div class="button_contents">Servo CCW 180</div>
           </td>
         </tr> 
-        --> 
+        -->
 
-        
-      </table>
-    </td>
 
-    <td>
-      <div class="code_container">
-        <div class="main_pane">
-          <div class="panel_title" onclick="forceRefresh(event)">Motion Plan</div>
-          <div id="lines_of_code"></div>
-        </div>
-        <table width="100%" style="vertical-align:bottom;">
-          <tr>
-            <td>
-              <div id="button_undo" class="code_button undo_button" onclick="undoCode(event)">
-                <div class="code_button_contents">Undo</div>
-              </div>
-            </td>
-            <td>
-              <div id="button_clear" class="code_button clear_plan_button" onclick="clearCode(event)">
-                <div class="code_button_contents">Clear Plan</div>
-              </div>
-            </td>
-            <td>
-              <div id="button_send" class="code_button" onclick="sendCode(event)">
-                <div class="code_button_contents">Uplink</div>
-              </div>
-            </td>
-            <td>
-              <div id="button_abort" class="code_button abort_button" onclick="boxbot_stop(event)">
-                <div class="code_button_contents">ABORT</div>
-              </div>
-            </td>
-          </tr>
         </table>
-      </div>
-    </td>
+      </td>
+
+      <td>
+        <div class="code_container">
+          <div class="main_pane">
+            <div class="panel_title"">Motion Plan</div>
+            <div id='code_area'></div>
+          </div>
+          <table width=" 100%" style="vertical-align:bottom;">
+    <tr>
+      <td>
+        <div id="button_undo" class="code_button undo_button" onclick="undoCode(event)">
+          <div class="code_button_contents">Undo</div>
+        </div>
+      </td>
+      <td>
+        <div id="button_clear" class="code_button clear_plan_button" onclick="clearCode(event)">
+          <div class="code_button_contents">Clear Plan</div>
+        </div>
+      </td>
+      <td>
+        <div id="button_send" class="code_button" onclick="sendCode(event)">
+          <div class="code_button_contents">Uplink</div>
+        </div>
+      </td>
+      <td>
+        <div id="button_abort" class="code_button abort_button" onclick="boxbot_stop(event)">
+          <div class="code_button_contents">ABORT</div>
+        </div>
+      </td>
+    </tr>
+  </table>
+  </div>
+  </td>
   </tr>
   </table>
   <pre style="color:aliceblue" id="error_panel"></pre>

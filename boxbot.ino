@@ -23,7 +23,7 @@ float linear_motion_fudge = 1.0;
 bool wheels_forward = true;
 
 // Set these to your desired credentials.
-const char *ssid = "silly-bobcat";
+const char *ssid = "pvusd-seagull";
 const char *password = (char *)NULL; 
 
 // primitive motion plan parsing/interpreting
