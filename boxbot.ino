@@ -12,6 +12,10 @@
 #define SDEBUG(label, x) {Serial.print(label); Serial.println(x);}
 #define ABS(x) ((x<0) ? (-x) : (x))
 
+// Set these to your desired credentials. (moved to top for easy access/update)
+const char *ssid = "bwx-nala";
+const char *password = (char *)NULL; 
+
 // the gui is (currently) served as static "files" from memory
 #include "html_files.h"  // script-generated in the repl.it repo: https://replit.com/@gever/bbdebuggui
 WebServer server(80);
@@ -21,10 +25,6 @@ uint16_t motor_step_rate = 950;
 float linear_turn_fudge = 1.0;
 float linear_motion_fudge = 1.0;
 bool wheels_forward = true;
-
-// Set these to your desired credentials.
-const char *ssid = "pvusd-seagull";
-const char *password = (char *)NULL; 
 
 // primitive motion plan parsing/interpreting
 #define MAX_PLAN_LEN 1024
